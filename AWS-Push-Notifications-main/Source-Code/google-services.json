@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "834115070892",
+    "project_id": "sendnotifications-274bb",
+    "storage_bucket": "sendnotifications-274bb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:834115070892:android:bd9f6ea5824123e9c46809",
+        "android_client_info": {
+          "package_name": "com.bekamguta.pushnotifications"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "834115070892-lej0acj3dlkc5lcvvpcg1tl14lt7n28r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDRw6Cx9LQ9mnFFlWUs0We26EkpmvNAZJE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "834115070892-lej0acj3dlkc5lcvvpcg1tl14lt7n28r.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
