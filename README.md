@@ -11,9 +11,9 @@
 ## 📱 Live Demo
 
 <p align="center">
-  <img src="https://via.placeholder.com/300x600/1f1f1f/ffffff?text=Android+App+Demo" alt="Android App Demo" width="250"/>
-  <img src="https://via.placeholder.com/300x600/ff9900/ffffff?text=Push+Notification" alt="Push Notification" width="250"/>
-  <img src="https://via.placeholder.com/300x600/039be5/ffffff?text=AWS+Dashboard" alt="AWS Dashboard" width="250"/>
+  <img src="docs/images/android-demo.svg" alt="Android App Demo" width="250"/>
+  <img src="docs/images/push-notification.svg" alt="Push Notification" width="250"/>
+  <img src="docs/images/aws-dashboard.svg" alt="AWS Dashboard" width="250"/>
 </p>
 
 ## 📋 Table of Contents
@@ -46,6 +46,11 @@ This project demonstrates a production-ready push notification system that seaml
 - **Production Ready**: Comprehensive monitoring and error handling
 
 ## 🏗️ Architecture
+
+<p align="center">
+  <img src="docs/images/architecture-diagram.svg" alt="AWS Push Notifications Architecture" width="700"/>
+</p>
+
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
@@ -149,9 +154,9 @@ aws lambda create-function --function-name push-notification-handler ...
 ## 📱 Screenshots
 
 <p align="center">
-  <img src="https://via.placeholder.com/250x450/1f1f1f/ffffff?text=Main+Screen" alt="Main Screen"/>
-  <img src="https://via.placeholder.com/250x450/2196f3/ffffff?text=Notification+Demo" alt="Notification Demo"/>
-  <img src="https://via.placeholder.com/250x450/4caf50/ffffff?text=Settings" alt="Settings"/>
+  <img src="docs/images/main-screen.svg" alt="Main Screen"/>
+  <img src="docs/images/notification-demo.svg" alt="Notification Demo"/>
+  <img src="docs/images/settings-screen.svg" alt="Settings"/>
 </p>
 
 ## 🔧 Configuration
