@@ -1,0 +1,3 @@
+{
+  "GCM": "{\"notification\": { \"body\": \"Sample message for Android SNS AWS\", \"title\":\"Hello world from AWS SNS\" } }"
+}
