@@ -1,0 +1,132 @@
+{
+  "environment": "staging",
+  "description": "Staging environment configuration for pre-production testing",
+  "region": "us-east-1",
+  "stage": "staging",
+  
+  "lambda": {
+    "functionName": "sendPushNotification-staging",
+    "runtime": "nodejs18.x",
+    "timeout": 30,
+    "memorySize": 512,
+    "environment": {
+      "NODE_ENV": "staging",
+      "LOG_LEVEL": "info",
+      "ENVIRONMENT": "staging",
+      "SNS_TOPIC_ARN": "arn:aws:sns:us-east-1:ACCOUNT_ID:push-notifications-staging",
+      "ENABLE_XRAY": "true",
+      "ENABLE_DETAILED_LOGGING": "false"
+    },
+    "tracingConfig": {
+      "mode": "Active"
+    },
+    "deadLetterConfig": {
+      "targetArn": "arn:aws:sqs:us-east-1:ACCOUNT_ID:push-notifications-dlq-staging"
+    },
+    "reservedConcurrency": 50
+  },
+  
+  "apiGateway": {
+    "restApiName": "push-notifications-api-staging",
+    "stageName": "staging",
+    "throttling": {
+      "burstLimit": 500,
+      "rateLimit": 200
+    },
+    "cors": {
+      "enabled": true,
+      "allowOrigins": ["https://staging.company.com"],
+      "allowMethods": ["GET", "POST", "OPTIONS"],
+      "allowHeaders": ["Content-Type", "Authorization", "X-API-Key"]
+    },
+    "logging": {
+      "accessLogEnabled": true,
+      "executionLogEnabled": true,
+      "logLevel": "INFO"
+    },
+    "apiKeyRequired": true
+  },
+  
+  "sns": {
+    "topicName": "push-notifications-staging",
+    "displayName": "Push Notifications Staging",
+    "deliveryPolicy": {
+      "http": {
+        "defaultHealthyRetryPolicy": {
+          "minDelayTarget": 20,
+          "maxDelayTarget": 20,
+          "numRetries": 3,
+          "numMaxDelayRetries": 0,
+          "numMinDelayRetries": 0,
+          "numNoDelayRetries": 0,
+          "backoffFunction": "linear"
+        }
+      }
+    },
+    "subscriptionFilterPolicy": {
+      "environment": ["staging"]
+    }
+  },
+  
+  "cloudWatch": {
+    "logRetentionDays": 14,
+    "dashboardName": "push-notifications-staging",
+    "alarms": {
+      "errorRateThreshold": 5,
+      "durationThreshold": 10000,
+      "throttleThreshold": 3
+    },
+    "customMetrics": {
+      "namespace": "PushNotifications/Staging",
+      "enabled": true
+    }
+  },
+  
+  "firebase": {
+    "projectId": "PROJECT_ID_STAGING",
+    "serviceAccountSecretName": "firebase-service-account-staging",
+    "databaseURL": "https://PROJECT_ID_STAGING-default-rtdb.firebaseio.com/"
+  },
+  
+  "security": {
+    "iamRoleName": "push-notifications-lambda-role-staging",
+    "apiKeyRequired": true,
+    "corsEnabled": true,
+    "enableResourceBasedPolicy": true,
+    "wafEnabled": true
+  },
+  
+  "monitoring": {
+    "xrayEnabled": true,
+    "detailedMonitoring": true,
+    "alertEmail": "staging-alerts@company.com",
+    "slackWebhook": "SLACK_WEBHOOK_URL_STAGING",
+    "pagerDutyEnabled": false
+  },
+  
+  "deployment": {
+    "deploymentMethod": "blue-green",
+    "enableCanaryDeployment": true,
+    "canaryPercentage": 10,
+    "rollbackOnFailure": true,
+    "healthCheckEnabled": true,
+    "smokeTestEnabled": true,
+    "approvalRequired": true
+  },
+  
+  "loadTesting": {
+    "enabled": true,
+    "maxConcurrentUsers": 100,
+    "testDuration": "10m",
+    "rampUpTime": "2m"
+  },
+  
+  "tags": {
+    "Environment": "staging",
+    "Project": "push-notifications",
+    "Owner": "ops-team",
+    "CostCenter": "engineering",
+    "BackupRequired": "true",
+    "DataClassification": "internal"
+  }
+}

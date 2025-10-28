@@ -1,0 +1,196 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for AWS Push Notifications system'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: '{{ENVIRONMENT}}'
+    AllowedValues: [dev, staging, prod]
+    Description: 'Deployment environment'
+  
+  ProjectName:
+    Type: String
+    Default: '{{PROJECT_NAME}}'
+    Description: 'Name of the project'
+  
+  LambdaFunctionName:
+    Type: String
+    Default: '{{LAMBDA_FUNCTION_NAME}}'
+    Description: 'Name of the Lambda function'
+  
+  LambdaRuntime:
+    Type: String
+    Default: '{{LAMBDA_RUNTIME}}'
+    Description: 'Lambda runtime version'
+  
+  LambdaTimeout:
+    Type: Number
+    Default: {{LAMBDA_TIMEOUT}}
+    Description: 'Lambda function timeout in seconds'
+  
+  LambdaMemorySize:
+    Type: Number
+    Default: {{LAMBDA_MEMORY_SIZE}}
+    Description: 'Lambda function memory size in MB'
+  
+  SNSTopicName:
+    Type: String
+    Default: '{{SNS_TOPIC_NAME}}'
+    Description: 'SNS topic name for notifications'
+  
+  APIGatewayName:
+    Type: String
+    Default: '{{API_GATEWAY_NAME}}'
+    Description: 'API Gateway REST API name'
+  
+  APIGatewayStageName:
+    Type: String
+    Default: '{{API_GATEWAY_STAGE}}'
+    Description: 'API Gateway stage name'
+  
+  ThrottleBurstLimit:
+    Type: Number
+    Default: {{THROTTLE_BURST_LIMIT}}
+    Description: 'API Gateway throttle burst limit'
+  
+  ThrottleRateLimit:
+    Type: Number
+    Default: {{THROTTLE_RATE_LIMIT}}
+    Description: 'API Gateway throttle rate limit'
+  
+  CloudWatchLogRetention:
+    Type: Number
+    Default: {{CLOUDWATCH_LOG_RETENTION}}
+    Description: 'CloudWatch log retention in days'
+  
+  EnableXRayTracing:
+    Type: String
+    Default: '{{ENABLE_XRAY_TRACING}}'
+    AllowedValues: [true, false]
+    Description: 'Enable X-Ray tracing'
+  
+  AlertEmail:
+    Type: String
+    Default: '{{ALERT_EMAIL}}'
+    Description: 'Email for CloudWatch alarms'
+  
+  FirebaseProjectId:
+    Type: String
+    Default: '{{FIREBASE_PROJECT_ID}}'
+    Description: 'Firebase project ID'
+  
+  KMSKeyId:
+    Type: String
+    Default: '{{KMS_KEY_ID}}'
+    Description: 'KMS key ID for encryption'
+  
+  VPCId:
+    Type: String
+    Default: '{{VPC_ID}}'
+    Description: 'VPC ID for Lambda function (optional)'
+  
+  SubnetIds:
+    Type: CommaDelimitedList
+    Default: '{{SUBNET_IDS}}'
+    Description: 'Subnet IDs for Lambda function (optional)'
+  
+  SecurityGroupIds:
+    Type: CommaDelimitedList
+    Default: '{{SECURITY_GROUP_IDS}}'
+    Description: 'Security Group IDs for Lambda function (optional)'
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, 'prod']
+  EnableVPC: !Not [!Equals [!Ref VPCId, '']]
+  EnableXRay: !Equals [!Ref EnableXRayTracing, 'true']
+
+Resources:
+  # Lambda Execution Role
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-lambda-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - !If [EnableVPC, 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole', !Ref 'AWS::NoValue']
+        - !If [EnableXRay, 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess', !Ref 'AWS::NoValue']
+      Policies:
+        - PolicyName: SNSPublishPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref SNSTopic
+        - PolicyName: SecretsManagerPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:firebase-service-account-${Environment}-*'
+
+  # SNS Topic
+  SNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Ref SNSTopicName
+      DisplayName: !Sub '${ProjectName} Notifications ${Environment}'
+      KmsMasterKeyId: !If [IsProduction, !Ref KMSKeyId, !Ref 'AWS::NoValue']
+
+  # Lambda Function
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      Runtime: !Ref LambdaRuntime
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: !Ref LambdaTimeout
+      MemorySize: !Ref LambdaMemorySize
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Environment
+          SNS_TOPIC_ARN: !Ref SNSTopic
+          FIREBASE_PROJECT_ID: !Ref FirebaseProjectId
+          LOG_LEVEL: !If [IsProduction, 'warn', 'info']
+      TracingConfig:
+        Mode: !If [EnableXRay, 'Active', 'PassThrough']
+      VpcConfig: !If
+        - EnableVPC
+        - SubnetIds: !Ref SubnetIds
+          SecurityGroupIds: !Ref SecurityGroupIds
+        - !Ref 'AWS::NoValue'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+Outputs:
+  LambdaFunctionArn:
+    Description: 'Lambda function ARN'
+    Value: !GetAtt LambdaFunction.Arn
+    Export:
+      Name: !Sub '${ProjectName}-lambda-arn-${Environment}'
+  
+  SNSTopicArn:
+    Description: 'SNS topic ARN'
+    Value: !Ref SNSTopic
+    Export:
+      Name: !Sub '${ProjectName}-sns-topic-arn-${Environment}'
+  
+  LambdaRoleArn:
+    Description: 'Lambda execution role ARN'
+    Value: !GetAtt LambdaExecutionRole.Arn
+    Export:
+      Name: !Sub '${ProjectName}-lambda-role-arn-${Environment}'

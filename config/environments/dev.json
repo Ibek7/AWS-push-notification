@@ -1,0 +1,115 @@
+{
+  "environment": "dev",
+  "description": "Development environment configuration",
+  "region": "us-east-1",
+  "stage": "dev",
+  
+  "lambda": {
+    "functionName": "sendPushNotification-dev",
+    "runtime": "nodejs18.x",
+    "timeout": 30,
+    "memorySize": 256,
+    "environment": {
+      "NODE_ENV": "development",
+      "LOG_LEVEL": "debug",
+      "ENVIRONMENT": "dev",
+      "SNS_TOPIC_ARN": "arn:aws:sns:us-east-1:ACCOUNT_ID:push-notifications-dev",
+      "ENABLE_XRAY": "true",
+      "ENABLE_DETAILED_LOGGING": "true"
+    },
+    "tracingConfig": {
+      "mode": "Active"
+    },
+    "deadLetterConfig": {
+      "targetArn": "arn:aws:sqs:us-east-1:ACCOUNT_ID:push-notifications-dlq-dev"
+    }
+  },
+  
+  "apiGateway": {
+    "restApiName": "push-notifications-api-dev",
+    "stageName": "dev",
+    "throttling": {
+      "burstLimit": 100,
+      "rateLimit": 50
+    },
+    "cors": {
+      "enabled": true,
+      "allowOrigins": ["*"],
+      "allowMethods": ["GET", "POST", "OPTIONS"],
+      "allowHeaders": ["Content-Type", "Authorization"]
+    },
+    "logging": {
+      "accessLogEnabled": true,
+      "executionLogEnabled": true,
+      "logLevel": "INFO"
+    }
+  },
+  
+  "sns": {
+    "topicName": "push-notifications-dev",
+    "displayName": "Push Notifications Dev",
+    "deliveryPolicy": {
+      "http": {
+        "defaultHealthyRetryPolicy": {
+          "minDelayTarget": 20,
+          "maxDelayTarget": 20,
+          "numRetries": 3,
+          "numMaxDelayRetries": 0,
+          "numMinDelayRetries": 0,
+          "numNoDelayRetries": 0,
+          "backoffFunction": "linear"
+        }
+      }
+    }
+  },
+  
+  "cloudWatch": {
+    "logRetentionDays": 7,
+    "dashboardName": "push-notifications-dev",
+    "alarms": {
+      "errorRateThreshold": 10,
+      "durationThreshold": 15000,
+      "throttleThreshold": 5
+    },
+    "customMetrics": {
+      "namespace": "PushNotifications/Dev",
+      "enabled": true
+    }
+  },
+  
+  "firebase": {
+    "projectId": "PROJECT_ID",
+    "serviceAccountSecretName": "firebase-service-account-dev",
+    "databaseURL": "https://PROJECT_ID-default-rtdb.firebaseio.com/"
+  },
+  
+  "security": {
+    "iamRoleName": "push-notifications-lambda-role-dev",
+    "apiKeyRequired": false,
+    "corsEnabled": true,
+    "enableResourceBasedPolicy": true
+  },
+  
+  "monitoring": {
+    "xrayEnabled": true,
+    "detailedMonitoring": true,
+    "alertEmail": "dev-team@company.com",
+    "slackWebhook": "SLACK_WEBHOOK_URL_DEV"
+  },
+  
+  "deployment": {
+    "deploymentMethod": "direct",
+    "enableCanaryDeployment": false,
+    "rollbackOnFailure": true,
+    "healthCheckEnabled": true,
+    "smokeTestEnabled": true
+  },
+  
+  "tags": {
+    "Environment": "dev",
+    "Project": "push-notifications",
+    "Owner": "dev-team",
+    "CostCenter": "engineering",
+    "BackupRequired": "false"
+  }
+}

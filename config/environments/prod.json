@@ -1,0 +1,168 @@
+{
+  "environment": "prod",
+  "description": "Production environment configuration for live system",
+  "region": "us-east-1",
+  "stage": "prod",
+  
+  "lambda": {
+    "functionName": "sendPushNotification",
+    "runtime": "nodejs18.x",
+    "timeout": 30,
+    "memorySize": 1024,
+    "environment": {
+      "NODE_ENV": "production",
+      "LOG_LEVEL": "warn",
+      "ENVIRONMENT": "prod",
+      "SNS_TOPIC_ARN": "arn:aws:sns:us-east-1:ACCOUNT_ID:push-notifications",
+      "ENABLE_XRAY": "true",
+      "ENABLE_DETAILED_LOGGING": "false"
+    },
+    "tracingConfig": {
+      "mode": "Active"
+    },
+    "deadLetterConfig": {
+      "targetArn": "arn:aws:sqs:us-east-1:ACCOUNT_ID:push-notifications-dlq"
+    },
+    "reservedConcurrency": 200,
+    "provisionedConcurrency": 50
+  },
+  
+  "apiGateway": {
+    "restApiName": "push-notifications-api",
+    "stageName": "prod",
+    "throttling": {
+      "burstLimit": 2000,
+      "rateLimit": 1000
+    },
+    "cors": {
+      "enabled": true,
+      "allowOrigins": ["https://app.company.com", "https://www.company.com"],
+      "allowMethods": ["POST", "OPTIONS"],
+      "allowHeaders": ["Content-Type", "Authorization", "X-API-Key"]
+    },
+    "logging": {
+      "accessLogEnabled": true,
+      "executionLogEnabled": false,
+      "logLevel": "ERROR"
+    },
+    "apiKeyRequired": true,
+    "caching": {
+      "enabled": false
+    }
+  },
+  
+  "sns": {
+    "topicName": "push-notifications",
+    "displayName": "Push Notifications Production",
+    "deliveryPolicy": {
+      "http": {
+        "defaultHealthyRetryPolicy": {
+          "minDelayTarget": 20,
+          "maxDelayTarget": 20,
+          "numRetries": 3,
+          "numMaxDelayRetries": 0,
+          "numMinDelayRetries": 0,
+          "numNoDelayRetries": 0,
+          "backoffFunction": "exponential"
+        }
+      }
+    },
+    "subscriptionFilterPolicy": {
+      "environment": ["prod"]
+    },
+    "kmsMasterKeyId": "alias/sns-push-notifications"
+  },
+  
+  "cloudWatch": {
+    "logRetentionDays": 30,
+    "dashboardName": "push-notifications-prod",
+    "alarms": {
+      "errorRateThreshold": 2,
+      "durationThreshold": 5000,
+      "throttleThreshold": 1
+    },
+    "customMetrics": {
+      "namespace": "PushNotifications/Production",
+      "enabled": true
+    }
+  },
+  
+  "firebase": {
+    "projectId": "PROJECT_ID_PROD",
+    "serviceAccountSecretName": "firebase-service-account-prod",
+    "databaseURL": "https://PROJECT_ID_PROD-default-rtdb.firebaseio.com/"
+  },
+  
+  "security": {
+    "iamRoleName": "push-notifications-lambda-role",
+    "apiKeyRequired": true,
+    "corsEnabled": true,
+    "enableResourceBasedPolicy": true,
+    "wafEnabled": true,
+    "encryptionAtRest": true,
+    "encryptionInTransit": true
+  },
+  
+  "monitoring": {
+    "xrayEnabled": true,
+    "detailedMonitoring": true,
+    "alertEmail": "production-alerts@company.com",
+    "slackWebhook": "SLACK_WEBHOOK_URL_PROD",
+    "pagerDutyEnabled": true,
+    "pagerDutyServiceKey": "PAGERDUTY_SERVICE_KEY"
+  },
+  
+  "deployment": {
+    "deploymentMethod": "blue-green",
+    "enableCanaryDeployment": true,
+    "canaryPercentage": 5,
+    "rollbackOnFailure": true,
+    "healthCheckEnabled": true,
+    "smokeTestEnabled": true,
+    "approvalRequired": true,
+    "maintenanceWindow": {
+      "enabled": true,
+      "dayOfWeek": "Sunday",
+      "startTime": "02:00",
+      "duration": "4h"
+    }
+  },
+  
+  "disaster_recovery": {
+    "enabled": true,
+    "backupRegion": "us-west-2",
+    "rpoMinutes": 60,
+    "rtoMinutes": 30,
+    "crossRegionReplication": true
+  },
+  
+  "compliance": {
+    "gdprCompliant": true,
+    "hipaaCompliant": false,
+    "auditLogging": true,
+    "dataRetentionDays": 365
+  },
+  
+  "performance": {
+    "autoScaling": {
+      "enabled": true,
+      "minConcurrency": 10,
+      "maxConcurrency": 1000,
+      "targetUtilization": 70
+    },
+    "caching": {
+      "enabled": true,
+      "ttlSeconds": 300
+    }
+  },
+  
+  "tags": {
+    "Environment": "prod",
+    "Project": "push-notifications",
+    "Owner": "platform-team",
+    "CostCenter": "production",
+    "BackupRequired": "true",
+    "DataClassification": "confidential",
+    "Compliance": "gdpr"
+  }
+}
