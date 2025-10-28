@@ -1,0 +1,47 @@
+{
+  "name": "aws-push-notifications-tools",
+  "version": "1.0.0",
+  "description": "Developer tools and utilities for AWS Push Notifications system",
+  "main": "index.js",
+  "scripts": {
+    "test-notification": "node notification-tester.js",
+    "validate-tokens": "node token-validator.js",
+    "analyze-logs": "node log-analyzer.js",
+    "batch-send": "node batch-sender.js",
+    "health-check": "./health-checker.sh",
+    "install-tools": "npm install",
+    "setup": "npm install && chmod +x *.sh"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1400.0",
+    "firebase-admin": "^11.10.0",
+    "node-fetch": "^2.6.12",
+    "uuid": "^9.0.0",
+    "readline": "^1.3.0"
+  },
+  "devDependencies": {
+    "jest": "^29.6.0",
+    "eslint": "^8.45.0"
+  },
+  "keywords": [
+    "aws",
+    "push-notifications",
+    "firebase",
+    "sns",
+    "lambda",
+    "developer-tools",
+    "utilities"
+  ],
+  "author": "AWS Push Notifications Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "bin": {
+    "test-notification": "./notification-tester.js",
+    "validate-tokens": "./token-validator.js",
+    "analyze-logs": "./log-analyzer.js",
+    "batch-send": "./batch-sender.js",
+    "health-check": "./health-checker.sh"
+  }
+}
