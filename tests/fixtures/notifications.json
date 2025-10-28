@@ -1,0 +1,106 @@
+{
+  "validNotifications": [
+    {
+      "fcmToken": "valid-fcm-token-12345-abcdef",
+      "title": "Welcome",
+      "message": "Welcome to our app!",
+      "data": {
+        "type": "welcome",
+        "userId": "user123"
+      }
+    },
+    {
+      "fcmToken": "valid-fcm-token-67890-ghijkl",
+      "title": "Update Available",
+      "message": "A new version is available for download",
+      "data": {
+        "type": "update",
+        "version": "2.1.0"
+      }
+    },
+    {
+      "fcmToken": "valid-fcm-token-mnopqr-stuvwx",
+      "title": "Reminder",
+      "message": "Don't forget to check your notifications",
+      "data": {
+        "type": "reminder",
+        "category": "general"
+      }
+    }
+  ],
+  
+  "invalidNotifications": [
+    {
+      "fcmToken": "invalid-token",
+      "title": "Test",
+      "message": "This should fail"
+    },
+    {
+      "fcmToken": "",
+      "title": "Empty Token",
+      "message": "Token is empty"
+    },
+    {
+      "title": "Missing Token",
+      "message": "FCM token is missing"
+    },
+    {
+      "fcmToken": "valid-token-12345",
+      "message": "Missing title"
+    },
+    {
+      "fcmToken": "valid-token-12345",
+      "title": "Missing Message"
+    }
+  ],
+  
+  "androidSpecific": {
+    "fcmToken": "android-device-token-12345",
+    "title": "Android Notification",
+    "message": "Testing Android-specific features",
+    "data": {
+      "click_action": "FLUTTER_NOTIFICATION_CLICK",
+      "sound": "default",
+      "vibrate": "true"
+    },
+    "android": {
+      "priority": "high",
+      "ttl": 3600000,
+      "notification": {
+        "icon": "notification_icon",
+        "color": "#FF5722",
+        "sound": "default",
+        "channelId": "push_notifications",
+        "clickAction": "FLUTTER_NOTIFICATION_CLICK"
+      }
+    }
+  },
+  
+  "batchNotifications": {
+    "notifications": [
+      {
+        "fcmToken": "batch-token-1",
+        "title": "Batch 1",
+        "message": "First batch notification"
+      },
+      {
+        "fcmToken": "batch-token-2",
+        "title": "Batch 2",
+        "message": "Second batch notification"
+      },
+      {
+        "fcmToken": "batch-token-3",
+        "title": "Batch 3",
+        "message": "Third batch notification"
+      }
+    ]
+  },
+  
+  "performanceTestData": {
+    "smallBatch": 10,
+    "mediumBatch": 100,
+    "largeBatch": 1000,
+    "concurrentRequests": 20,
+    "maxResponseTime": 2000
+  }
+}

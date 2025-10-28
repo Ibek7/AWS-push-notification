@@ -1,0 +1,78 @@
+{
+  "aws": {
+    "sns": {
+      "topicArn": "arn:aws:sns:us-east-1:123456789012:push-notifications-test",
+      "region": "us-east-1",
+      "messageAttributes": {
+        "notification_type": {
+          "DataType": "String",
+          "StringValue": "push"
+        },
+        "environment": {
+          "DataType": "String", 
+          "StringValue": "test"
+        }
+      }
+    },
+    "lambda": {
+      "functionName": "sendPushNotification-test",
+      "region": "us-east-1",
+      "timeout": 30,
+      "memorySize": 256
+    },
+    "cloudwatch": {
+      "logGroupName": "/aws/lambda/sendPushNotification-test",
+      "retentionInDays": 7
+    }
+  },
+  
+  "firebase": {
+    "projectId": "test-project-12345",
+    "serviceAccount": {
+      "type": "service_account",
+      "project_id": "test-project-12345",
+      "private_key_id": "test-key-id",
+      "client_email": "firebase-adminsdk@test-project-12345.iam.gserviceaccount.com",
+      "client_id": "123456789012345678901",
+      "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+      "token_uri": "https://oauth2.googleapis.com/token"
+    },
+    "fcm": {
+      "serverKey": "test-server-key",
+      "senderId": "123456789012"
+    }
+  },
+  
+  "apiGateway": {
+    "baseUrl": "https://test-api.execute-api.us-east-1.amazonaws.com",
+    "stage": "test",
+    "endpoints": {
+      "sendNotification": "/test/send-notification",
+      "sendBatch": "/test/send-batch-notifications",
+      "health": "/test/health"
+    },
+    "rateLimiting": {
+      "burstLimit": 100,
+      "rateLimit": 50
+    }
+  },
+  
+  "testing": {
+    "timeouts": {
+      "unit": 5000,
+      "integration": 10000,
+      "e2e": 30000
+    },
+    "retries": {
+      "maxRetries": 3,
+      "retryDelay": 1000
+    },
+    "mock": {
+      "enabled": true,
+      "endpoints": {
+        "fcm": "http://localhost:3001",
+        "sns": "http://localhost:4566"
+      }
+    }
+  }
+}
