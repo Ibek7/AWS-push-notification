@@ -1,0 +1,61 @@
+{
+  "version": 2,
+  "default": {
+    "fixed_target": 1,
+    "rate": 0.05
+  },
+  "rules": [
+    {
+      "description": "High priority notifications - sample all",
+      "service_name": "sendPushNotification",
+      "http_method": "*",
+      "url_path": "*",
+      "fixed_target": 2,
+      "rate": 1.0,
+      "attributes": {
+        "notificationType": "urgent"
+      }
+    },
+    {
+      "description": "Error traces - sample all",
+      "service_name": "*",
+      "http_method": "*", 
+      "url_path": "*",
+      "fixed_target": 1,
+      "rate": 1.0,
+      "attributes": {
+        "error": true
+      }
+    },
+    {
+      "description": "Production environment - reduced sampling",
+      "service_name": "*",
+      "http_method": "*",
+      "url_path": "*",
+      "fixed_target": 1,
+      "rate": 0.01,
+      "attributes": {
+        "environment": "prod"
+      }
+    },
+    {
+      "description": "Development environment - high sampling",
+      "service_name": "*",
+      "http_method": "*",
+      "url_path": "*",
+      "fixed_target": 2,
+      "rate": 0.5,
+      "attributes": {
+        "environment": "dev"
+      }
+    },
+    {
+      "description": "Batch notifications - lower sampling",
+      "service_name": "sendPushNotification",
+      "http_method": "POST",
+      "url_path": "/batch",
+      "fixed_target": 1,
+      "rate": 0.1
+    }
+  ]
+}

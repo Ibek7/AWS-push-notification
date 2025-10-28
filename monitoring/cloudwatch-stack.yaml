@@ -1,0 +1,253 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudWatch monitoring stack for AWS Push Notifications system'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name
+  
+  LambdaFunctionName:
+    Type: String
+    Default: sendPushNotification
+    Description: Name of the Lambda function to monitor
+  
+  SNSTopicName:
+    Type: String
+    Default: push-notifications
+    Description: Name of the SNS topic to monitor
+  
+  NotificationEmail:
+    Type: String
+    Description: Email address for alert notifications
+
+Resources:
+  # CloudWatch Dashboard
+  PushNotificationsDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${Environment}-push-notifications-dashboard'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Lambda", "Invocations", "FunctionName", "${LambdaFunctionName}" ],
+                  [ ".", "Errors", ".", "." ],
+                  [ ".", "Duration", ".", "." ],
+                  [ ".", "Throttles", ".", "." ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Lambda Function Metrics",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/SNS", "NumberOfMessagesPublished", "TopicName", "${SNSTopicName}" ],
+                  [ ".", "NumberOfNotificationsFailed", ".", "." ],
+                  [ ".", "NumberOfNotificationsDelivered", ".", "." ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "SNS Topic Metrics",
+                "period": 300
+              }
+            },
+            {
+              "type": "log",
+              "x": 0,
+              "y": 6,
+              "width": 24,
+              "height": 6,
+              "properties": {
+                "query": "SOURCE '/aws/lambda/${LambdaFunctionName}' | fields @timestamp, @message\n| filter @message like /ERROR/\n| sort @timestamp desc\n| limit 20",
+                "region": "${AWS::Region}",
+                "title": "Recent Errors",
+                "view": "table"
+              }
+            }
+          ]
+        }
+
+  # SNS Topic for Alerts
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${Environment}-push-notifications-alerts'
+      DisplayName: Push Notifications Alerts
+
+  # Email Subscription for Alerts
+  AlertEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref AlertTopic
+      Protocol: email
+      Endpoint: !Ref NotificationEmail
+
+  # Lambda Function Error Rate Alarm
+  LambdaErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${Environment}-lambda-error-rate-high'
+      AlarmDescription: 'Lambda function error rate is above threshold'
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref LambdaFunctionName
+      AlarmActions:
+        - !Ref AlertTopic
+      TreatMissingData: notBreaching
+
+  # Lambda Function Duration Alarm
+  LambdaDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${Environment}-lambda-duration-high'
+      AlarmDescription: 'Lambda function duration is above threshold'
+      MetricName: Duration
+      Namespace: AWS/Lambda
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 10000
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref LambdaFunctionName
+      AlarmActions:
+        - !Ref AlertTopic
+      TreatMissingData: notBreaching
+
+  # Lambda Function Throttle Alarm
+  LambdaThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${Environment}-lambda-throttles'
+      AlarmDescription: 'Lambda function is being throttled'
+      MetricName: Throttles
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref LambdaFunctionName
+      AlarmActions:
+        - !Ref AlertTopic
+      TreatMissingData: notBreaching
+
+  # SNS Failed Messages Alarm
+  SNSFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${Environment}-sns-failures'
+      AlarmDescription: 'SNS message delivery failures detected'
+      MetricName: NumberOfNotificationsFailed
+      Namespace: AWS/SNS
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: TopicName
+          Value: !Ref SNSTopicName
+      AlarmActions:
+        - !Ref AlertTopic
+      TreatMissingData: notBreaching
+
+  # Custom Metric Filter for Application Errors
+  ApplicationErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${LambdaFunctionName}'
+      FilterPattern: '[timestamp, request_id, level="ERROR", ...]'
+      MetricTransformations:
+        - MetricNamespace: PushNotifications/Application
+          MetricName: ApplicationErrors
+          MetricValue: '1'
+          DefaultValue: 0
+
+  # Custom Metric Filter for FCM Failures
+  FCMFailureMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${LambdaFunctionName}'
+      FilterPattern: '[timestamp, request_id, level, message="FCM*failed" || message="Firebase*error"]'
+      MetricTransformations:
+        - MetricNamespace: PushNotifications/Firebase
+          MetricName: FCMFailures
+          MetricValue: '1'
+          DefaultValue: 0
+
+  # Custom Metric Filter for Success Rate
+  NotificationSuccessMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${LambdaFunctionName}'
+      FilterPattern: '[timestamp, request_id, level="INFO", message="Notification*sent*successfully"]'
+      MetricTransformations:
+        - MetricNamespace: PushNotifications/Application
+          MetricName: SuccessfulNotifications
+          MetricValue: '1'
+          DefaultValue: 0
+
+  # Application Error Rate Alarm
+  ApplicationErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${Environment}-application-error-rate'
+      AlarmDescription: 'Application error rate is above threshold'
+      MetricName: ApplicationErrors
+      Namespace: PushNotifications/Application
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref AlertTopic
+      TreatMissingData: notBreaching
+
+  # Log Group Retention
+  LambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${LambdaFunctionName}'
+      RetentionInDays: 30
+
+Outputs:
+  DashboardURL:
+    Description: 'CloudWatch Dashboard URL'
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-push-notifications-dashboard'
+  
+  AlertTopicArn:
+    Description: 'SNS Topic ARN for alerts'
+    Value: !Ref AlertTopic
+    Export:
+      Name: !Sub '${Environment}-push-notifications-alert-topic'
